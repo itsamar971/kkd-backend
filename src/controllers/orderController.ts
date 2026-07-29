@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 export const placeOrder = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const buyerId = req.user?.uid;
-    const { productId, quantityKg, deliveryAddress } = req.body;
+    const { productId, quantityKg, deliveryAddress, couponCode, finalTotal } = req.body;
 
     if (!productId || !quantityKg || !deliveryAddress) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -35,13 +35,28 @@ export const placeOrder = async (req: AuthenticatedRequest, res: Response) => {
       farmerId: productData.farmerId,
       productId,
       quantityKg: Number(quantityKg),
-      totalAmount,
+      totalAmount: finalTotal || totalAmount, // use finalTotal if provided (discounted)
+      originalAmount: totalAmount,
+      couponCode: couponCode || null,
       status: 'processing',
       deliveryAddress,
       createdAt: new Date().toISOString()
     };
 
     const orderRef = await db.collection('orders').add(newOrder);
+
+    if (couponCode) {
+      try {
+        const snap = await db.collection('promotions').where('code', '==', couponCode.toUpperCase()).limit(1).get();
+        if (!snap.empty) {
+          const promoRef = snap.docs[0].ref;
+          const promoData = snap.docs[0].data();
+          await promoRef.update({ usedCount: (promoData.usedCount || 0) + 1 });
+        }
+      } catch (e) {
+        console.error('Failed to update coupon usage', e);
+      }
+    }
 
     // Update stock quantity
     await productRef.update({

@@ -8,6 +8,15 @@ import productRoutes from './routes/productRoutes';
 import orderRoutes from './routes/orderRoutes';
 import adminRoutes from './routes/adminRoutes';
 import marketRoutes from './routes/marketRoutes';
+import messageRoutes from './routes/messageRoutes';
+import settingsRoutes from './routes/settingsRoutes';
+import verificationRoutes from './routes/verificationRoutes';
+import announcementRoutes from './routes/announcementRoutes';
+import promotionRoutes from './routes/promotionRoutes';
+import disputeRoutes from './routes/disputeRoutes';
+import financeRoutes from './routes/financeRoutes';
+import mandiRoutes from './routes/mandiRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 const app = express();
 
@@ -26,6 +35,15 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/messages', messageRoutes);
+app.use('/api/admin/settings', settingsRoutes);
+app.use('/api/admin/verification', verificationRoutes);
+app.use('/api/admin/announcements', announcementRoutes);
+app.use('/api/admin/promotions', promotionRoutes);
+app.use('/api/admin/disputes', disputeRoutes);
+app.use('/api/admin/finance', financeRoutes);
+app.use('/api/admin/mandi', mandiRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/market', marketRoutes);
 
 app.get('/health', (req, res) => {

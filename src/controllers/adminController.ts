@@ -64,3 +64,29 @@ export const getStats = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const createAgent = async (req: Request, res: Response) => {
+  try {
+    const { name, phone, status, currentOrders } = req.body;
+    
+    if (!name || !phone) {
+      return res.status(400).json({ error: 'Name and phone are required' });
+    }
+
+    const newAgent = {
+      name,
+      phone,
+      role: 'agent',
+      status: status || 'Available',
+      currentOrders: currentOrders || 0,
+      createdAt: new Date().toISOString()
+    };
+
+    const docRef = await db.collection('users').add(newAgent);
+    
+    return res.status(201).json({ message: 'Agent created', id: docRef.id, ...newAgent });
+  } catch (error) {
+    console.error('Error creating agent:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
