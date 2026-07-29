@@ -1,4 +1,4 @@
-import { Router } from 'express';
+ import { Router } from 'express';
 import { createProduct, updateProduct, listProducts, getProductReviews } from '../controllers/productController';
 import { verifyToken, requireRole } from '../middleware/auth';
 
