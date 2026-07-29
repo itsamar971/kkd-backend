@@ -144,7 +144,7 @@ export const addOrderReview = async (req: AuthenticatedRequest, res: Response) =
       return res.status(400).json({ error: 'Valid rating (1-5) is required' });
     }
 
-    const orderRef = db.collection('orders').doc(id);
+    const orderRef = db.collection('orders').doc(id as string);
     const orderDoc = await orderRef.get();
 
     if (!orderDoc.exists) {

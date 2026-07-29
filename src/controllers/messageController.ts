@@ -30,7 +30,7 @@ export const replyToConversation = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    const convoRef = db.collection('conversations').doc(id);
+    const convoRef = db.collection('conversations').doc(id as string);
     const convoDoc = await convoRef.get();
 
     if (!convoDoc.exists) {

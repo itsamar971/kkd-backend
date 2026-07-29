@@ -4,7 +4,7 @@ import { db } from '../config/firebase';
 export const getDisputes = async (req: Request, res: Response) => {
   try {
     const snap = await db.collection('disputes').get();
-    let disputes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let disputes: any[] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
     if (disputes.length === 0) {
       disputes = [
@@ -22,8 +22,8 @@ export const resolveDispute = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { action } = req.body; // 'refund_full', 'refund_partial', 'reject'
-    if (!id.startsWith('disp_')) {
-       await db.collection('disputes').doc(id).update({ status: 'resolved', resolution: action });
+    if (!(id as string).startsWith('disp_')) {
+       await db.collection('disputes').doc(id as string).update({ status: 'resolved', resolution: action });
     }
     return res.status(200).json({ success: true, message: 'Dispute resolved' });
   } catch (error) {

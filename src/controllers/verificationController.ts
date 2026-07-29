@@ -5,7 +5,7 @@ export const getPendingVerifications = async (req: Request, res: Response) => {
   try {
     const productsSnapshot = await db.collection('products').where('status', '==', 'pending_verification').get();
     
-    let products = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let products: any[] = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
     // If empty, return some mock data so the dashboard is testable
     if (products.length === 0) {
@@ -47,8 +47,8 @@ export const getPendingVerifications = async (req: Request, res: Response) => {
 export const approveProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    if (!id.startsWith('mock_')) {
-       await db.collection('products').doc(id).update({ status: 'approved' });
+    if (!(id as string).startsWith('mock_')) {
+       await db.collection('products').doc(id as string).update({ status: 'approved' });
     }
     return res.status(200).json({ success: true, message: 'Product approved' });
   } catch (error) {
@@ -61,8 +61,8 @@ export const rejectProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { feedback } = req.body;
-    if (!id.startsWith('mock_')) {
-       await db.collection('products').doc(id).update({ status: 'rejected', feedback });
+    if (!(id as string).startsWith('mock_')) {
+       await db.collection('products').doc(id as string).update({ status: 'rejected', feedback });
     }
     return res.status(200).json({ success: true, message: 'Product rejected' });
   } catch (error) {
