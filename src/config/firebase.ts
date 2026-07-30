@@ -9,7 +9,7 @@ let app: App;
 const serviceAccountPath = path.resolve(process.cwd(), 'firebaseServiceAccountKey.json');
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-  // Production: use the service account JSON from environment variable
+  // Production: use the service account JSON from single environment variable
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
   app = initializeApp({
     credential: cert(serviceAccount),
@@ -17,6 +17,18 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'kisan-ka-dukan.firebasestorage.app'
   });
   console.log('✅ Firebase Admin initialized with FIREBASE_SERVICE_ACCOUNT_KEY from env.');
+} else if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+  // Production: use individual environment variables (Render/Vercel style)
+  app = initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+    projectId: process.env.FIREBASE_PROJECT_ID || 'kisan-ka-dukan',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'kisan-ka-dukan.firebasestorage.app'
+  });
+  console.log('✅ Firebase Admin initialized with individual FIREBASE_ env vars.');
 } else if (fs.existsSync(serviceAccountPath)) {
   // Local development: use the service account JSON file
   app = initializeApp({
