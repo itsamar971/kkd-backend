@@ -22,13 +22,29 @@ const app = express();
 
 app.disable('etag'); // Disables 304 Not Modified responses, forces 200 OK
 
-app.use(cors());
+// CORS configuration — allow all origins with credentials support
+const corsOptions = {
+  origin: true, // reflect the request origin — allows all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+// Handle preflight OPTIONS for ALL routes BEFORE anything else
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(morgan('dev')); // HTTP request logger
 
 // Serve static files
 app.use('/public', express.static(path.join(__dirname, '../public')));
+
+// Health check (before auth middleware)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
 
 // Routes
 app.use('/api/users', userRoutes);
@@ -45,9 +61,5 @@ app.use('/api/admin/finance', financeRoutes);
 app.use('/api/admin/mandi', mandiRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/market', marketRoutes);
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
-});
 
 export default app;
