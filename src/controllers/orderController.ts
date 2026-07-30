@@ -34,6 +34,10 @@ export const placeOrder = async (req: AuthenticatedRequest, res: Response) => {
       buyerId,
       farmerId: productData.farmerId,
       productId,
+      productName: productData.name,
+      name: productData.name,
+      crop: productData.name,
+      category: productData.category || 'Grains',
       quantityKg: Number(quantityKg),
       totalAmount: finalTotal || totalAmount, // use finalTotal if provided (discounted)
       originalAmount: totalAmount,
