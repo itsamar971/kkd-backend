@@ -85,13 +85,19 @@ export const listProducts = async (req: Request, res: Response) => {
     const products = await Promise.all(snapshot.docs.map(async (doc: any) => {
       const data = doc.data();
       let farmerName = data.farmerName || data.farmer;
+      let farmerLoc = data.loc || data.location || data.city;
       
-      if ((!farmerName || farmerName === 'Farmer' || farmerName.startsWith('Farmer ')) && data.farmerId) {
+      if (data.farmerId) {
         try {
           const userDoc = await db.collection('users').doc(data.farmerId).get();
           if (userDoc.exists) {
             const u = userDoc.data();
-            farmerName = u?.fullName || u?.name || u?.displayName;
+            if (!farmerName || farmerName === 'Farmer' || farmerName.startsWith('Farmer ')) {
+              farmerName = u?.fullName || u?.name || u?.displayName;
+            }
+            if (!farmerLoc || farmerLoc === 'Various') {
+              farmerLoc = u?.location || u?.city || u?.district || u?.state;
+            }
           }
         } catch (e) {
           console.error("Error fetching farmer user for product:", e);
@@ -102,11 +108,17 @@ export const listProducts = async (req: Request, res: Response) => {
         farmerName = 'rahul';
       }
 
+      if (!farmerLoc) {
+        farmerLoc = 'Ludhiana, Punjab';
+      }
+
       return {
         id: doc.id,
         ...data,
         farmerName,
-        farmer: farmerName
+        farmer: farmerName,
+        loc: farmerLoc,
+        location: farmerLoc
       };
     }));
 
