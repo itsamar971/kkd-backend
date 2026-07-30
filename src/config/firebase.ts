@@ -8,14 +8,23 @@ let app: App;
 
 const serviceAccountPath = path.resolve(process.cwd(), 'firebaseServiceAccountKey.json');
 
-if (fs.existsSync(serviceAccountPath)) {
+if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  // Production: use the service account JSON from environment variable
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+  app = initializeApp({
+    credential: cert(serviceAccount),
+    projectId: process.env.FIREBASE_PROJECT_ID || 'kisan-ka-dukan',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'kisan-ka-dukan.firebasestorage.app'
+  });
+  console.log('✅ Firebase Admin initialized with FIREBASE_SERVICE_ACCOUNT_KEY from env.');
+} else if (fs.existsSync(serviceAccountPath)) {
   // Local development: use the service account JSON file
   app = initializeApp({
     credential: cert(serviceAccountPath),
     projectId: process.env.FIREBASE_PROJECT_ID || 'kisan-ka-dukan',
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'kisan-ka-dukan.firebasestorage.app'
   });
-  console.log('✅ Firebase Admin initialized with Service Account Key.');
+  console.log('✅ Firebase Admin initialized with Service Account Key file.');
 } else {
   // Production / Cloud environments: use Application Default Credentials
   // Works automatically on Google Cloud Run, App Engine, etc.
