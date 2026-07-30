@@ -15,6 +15,7 @@ export const listUsers = async (req: Request, res: Response) => {
 export const verifyFarmer = async (req: Request, res: Response) => {
   try {
     const { uid } = req.params;
+    const { action } = req.body || {};
     
     const userRef = db.collection('users').doc(uid as string);
     const userDoc = await userRef.get();
@@ -27,7 +28,17 @@ export const verifyFarmer = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'User is not a farmer' });
     }
 
-    await userRef.update({ isVerified: true });
+    if (action === 'request_reupload') {
+      await userRef.update({ 
+        isVerified: false, 
+        lastVerifiedAt: '2000-01-01T00:00:00.000Z',
+        cropVerificationImage: null,
+        cropVerificationUrl: null 
+      });
+      return res.status(200).json({ message: 'Re-upload requested successfully' });
+    }
+
+    await userRef.update({ isVerified: true, lastVerifiedAt: new Date().toISOString() });
     
     return res.status(200).json({ message: 'Farmer verified successfully' });
   } catch (error) {
