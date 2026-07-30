@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { syncUser, verifyFarmer, getUserConversation, sendMessageToAdmin } from '../controllers/userController';
+import { getAnnouncementsForUser } from '../controllers/announcementController';
 import { verifyToken, requireRole } from '../middleware/auth';
 
 const router = Router();
@@ -15,5 +16,8 @@ router.get('/messages', verifyToken, getUserConversation);
 
 // POST /api/users/messages
 router.post('/messages', verifyToken, sendMessageToAdmin);
+
+// GET /api/users/announcements
+router.get('/announcements', verifyToken, getAnnouncementsForUser);
 
 export default router;
