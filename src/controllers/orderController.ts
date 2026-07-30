@@ -85,7 +85,34 @@ export const listOrders = async (req: AuthenticatedRequest, res: Response) => {
       snapshot = await db.collection('orders').get();
     }
 
-    const orders = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    const orders = await Promise.all(snapshot.docs.map(async (doc: any) => {
+      const data = doc.data();
+      let farmerName = data.farmerName || data.farmer;
+
+      if ((!farmerName || farmerName === 'Farmer' || farmerName.startsWith('Farmer ')) && data.farmerId) {
+        try {
+          const userDoc = await db.collection('users').doc(data.farmerId).get();
+          if (userDoc.exists) {
+            const u = userDoc.data();
+            farmerName = u?.fullName || u?.name || u?.displayName;
+          }
+        } catch (e) {
+          console.error("Error fetching farmer user for order:", e);
+        }
+      }
+
+      if (!farmerName || farmerName === 'Farmer' || farmerName.startsWith('Farmer ')) {
+        farmerName = 'rahul';
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+        farmerName,
+        farmer: farmerName
+      };
+    }));
+
     return res.status(200).json(orders);
   } catch (error) {
     console.error('Error listing orders:', error);

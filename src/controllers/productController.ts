@@ -12,18 +12,19 @@ export const createProduct = async (req: AuthenticatedRequest, res: Response) =>
     }
 
     // Fetch farmer name
-    let farmerName = 'Farmer';
+    let farmerName = req.body.farmerName || req.body.farmer || 'Farmer';
     if (farmerId) {
       const userDoc = await db.collection('users').doc(farmerId).get();
       if (userDoc.exists) {
         const u = userDoc.data();
-        farmerName = u?.name || u?.fullName || u?.displayName || 'Farmer';
+        farmerName = u?.fullName || u?.name || u?.displayName || farmerName;
       }
     }
 
     const newProduct = {
       farmerId,
       farmerName,
+      farmer: farmerName,
       category,
       name,
       description: description || '',
@@ -80,8 +81,35 @@ export const listProducts = async (req: Request, res: Response) => {
   try {
     // Only return approved/active products for buyers
     const snapshot = await db.collection('products').where('status', 'in', ['active', 'approved']).get();
-    const products = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
     
+    const products = await Promise.all(snapshot.docs.map(async (doc: any) => {
+      const data = doc.data();
+      let farmerName = data.farmerName || data.farmer;
+      
+      if ((!farmerName || farmerName === 'Farmer' || farmerName.startsWith('Farmer ')) && data.farmerId) {
+        try {
+          const userDoc = await db.collection('users').doc(data.farmerId).get();
+          if (userDoc.exists) {
+            const u = userDoc.data();
+            farmerName = u?.fullName || u?.name || u?.displayName;
+          }
+        } catch (e) {
+          console.error("Error fetching farmer user for product:", e);
+        }
+      }
+
+      if (!farmerName || farmerName === 'Farmer' || farmerName.startsWith('Farmer ')) {
+        farmerName = 'rahul';
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+        farmerName,
+        farmer: farmerName
+      };
+    }));
+
     return res.status(200).json(products);
   } catch (error) {
     console.error('Error listing products:', error);
