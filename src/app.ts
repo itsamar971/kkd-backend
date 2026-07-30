@@ -30,8 +30,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
-// Handle preflight OPTIONS for ALL routes BEFORE anything else
-app.options('*', cors(corsOptions));
+// CORS middleware handles preflight OPTIONS automatically
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
