@@ -62,40 +62,25 @@ export const verifyFarmer = async (req: AuthenticatedRequest, res: Response) => 
     const { uid } = req.user;
     const { imageUrl, imageBase64 } = req.body;
 
-    let finalUrl = imageUrl;
-
-    if (imageBase64) {
-      const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (match) {
-        const base64Data = match[2];
-        const buffer = Buffer.from(base64Data, 'base64');
-        
-        // Save locally to public/uploads
-        const uploadsDir = path.join(__dirname, '../../public/uploads');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        
-        const fileName = `crop_${uid}_${Date.now()}.jpg`;
-        const filePath = path.join(uploadsDir, fileName);
-        fs.writeFileSync(filePath, buffer);
-        
-        // Construct the URL to serve the file
-        finalUrl = `http://localhost:3000/public/uploads/${fileName}`;
-      }
-    }
-
     const userRef = db.collection('users').doc(uid);
     const updates: any = {
       lastVerifiedAt: new Date().toISOString(),
+      verificationStatus: 'pending',
     };
-    if (finalUrl) {
-      updates.cropVerificationUrl = finalUrl;
+
+    // Store the base64 image directly (works on ephemeral hosts like Render)
+    if (imageBase64) {
+      updates.cropVerificationImage = imageBase64;
+    } else if (imageUrl) {
+      updates.cropVerificationUrl = imageUrl;
     }
 
     await userRef.update(updates);
 
-    return res.status(200).json({ message: 'Verification successful', lastVerifiedAt: updates.lastVerifiedAt, url: finalUrl });
+    return res.status(200).json({ 
+      message: 'Verification successful', 
+      lastVerifiedAt: updates.lastVerifiedAt 
+    });
   } catch (error: any) {
     console.error('Error verifying farmer:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
