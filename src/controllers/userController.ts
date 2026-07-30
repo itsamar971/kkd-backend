@@ -86,3 +86,76 @@ export const verifyFarmer = async (req: AuthenticatedRequest, res: Response) => 
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
+
+export const getUserConversation = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const { uid } = req.user;
+
+    const convoDoc = await db.collection('conversations').doc(uid).get();
+    if (!convoDoc.exists) {
+      return res.status(200).json({ messages: [] });
+    }
+
+    return res.status(200).json(convoDoc.data());
+  } catch (error) {
+    console.error('Error fetching user conversation:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const sendMessageToAdmin = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const { uid, email, name, role } = req.user;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const convoRef = db.collection('conversations').doc(uid);
+    const convoDoc = await convoRef.get();
+
+    const newMsg = {
+      id: Date.now().toString(),
+      senderId: uid,
+      text: text.trim(),
+      timestamp: new Date().toISOString(),
+      isAdmin: false
+    };
+
+    if (!convoDoc.exists) {
+      const userDoc = await db.collection('users').doc(uid).get();
+      const userData = userDoc.data() || {};
+      const userName = userData.name || userData.fullName || name || email || 'User';
+
+      const newConvo = {
+        id: uid,
+        userId: uid,
+        userName,
+        userType: role || userData.role || 'farmer',
+        lastMessage: text.trim(),
+        timestamp: newMsg.timestamp,
+        unread: true,
+        unreadAdmin: true,
+        messages: [newMsg]
+      };
+      await convoRef.set(newConvo);
+      return res.status(201).json({ message: 'Message sent', conversation: newConvo });
+    } else {
+      const currentMessages = convoDoc.data()?.messages || [];
+      await convoRef.update({
+        messages: [...currentMessages, newMsg],
+        lastMessage: text.trim(),
+        timestamp: newMsg.timestamp,
+        unread: true,
+        unreadAdmin: true
+      });
+      return res.status(200).json({ message: 'Message sent', reply: newMsg });
+    }
+  } catch (error) {
+    console.error('Error sending message to admin:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
