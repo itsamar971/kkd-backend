@@ -11,20 +11,34 @@ export const createProduct = async (req: AuthenticatedRequest, res: Response) =>
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Fetch farmer name
+    let farmerName = 'Farmer';
+    if (farmerId) {
+      const userDoc = await db.collection('users').doc(farmerId).get();
+      if (userDoc.exists) {
+        const u = userDoc.data();
+        farmerName = u?.name || u?.fullName || u?.displayName || 'Farmer';
+      }
+    }
+
     const newProduct = {
       farmerId,
+      farmerName,
       category,
       name,
       description: description || '',
       pricePerKg: Number(pricePerKg),
       stockQuantityKg: Number(stockQuantityKg),
-      status: 'active',
+      price: Number(pricePerKg),
+      quantity: Number(stockQuantityKg),
+      unit: 'kg',
+      status: 'pending_verification',
       createdAt: new Date().toISOString()
     };
 
     const docRef = await db.collection('products').add(newProduct);
     
-    return res.status(201).json({ message: 'Product created', id: docRef.id, ...newProduct });
+    return res.status(201).json({ message: 'Product created and submitted for verification', id: docRef.id, ...newProduct });
   } catch (error) {
     console.error('Error creating product:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -64,7 +78,8 @@ export const updateProduct = async (req: AuthenticatedRequest, res: Response) =>
 
 export const listProducts = async (req: Request, res: Response) => {
   try {
-    const snapshot = await db.collection('products').where('status', '==', 'active').get();
+    // Only return approved/active products for buyers
+    const snapshot = await db.collection('products').where('status', 'in', ['active', 'approved']).get();
     const products = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
     
     return res.status(200).json(products);

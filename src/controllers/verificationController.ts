@@ -4,39 +4,8 @@ import { db } from '../config/firebase';
 export const getPendingVerifications = async (req: Request, res: Response) => {
   try {
     const productsSnapshot = await db.collection('products').where('status', '==', 'pending_verification').get();
+    const products: any[] = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    let products: any[] = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // If empty, return some mock data so the dashboard is testable
-    if (products.length === 0) {
-      products = [
-        {
-          id: 'mock_1',
-          name: 'Grade A Apples',
-          farmerName: 'Ramesh Singh',
-          price: 120,
-          unit: 'kg',
-          quantity: 50,
-          description: 'Freshly harvested apples from Shimla.',
-          images: ['https://images.unsplash.com/photo-1560806887-1e4cd0b6fac6?w=400'],
-          status: 'pending_verification',
-          submittedAt: new Date().toISOString()
-        },
-        {
-          id: 'mock_2',
-          name: 'Organic Wheat',
-          farmerName: 'Suresh Kumar',
-          price: 40,
-          unit: 'kg',
-          quantity: 200,
-          description: 'High quality organic wheat grains.',
-          images: ['https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400'],
-          status: 'pending_verification',
-          submittedAt: new Date().toISOString()
-        }
-      ];
-    }
-
     return res.status(200).json(products);
   } catch (error) {
     console.error('Error fetching verifications:', error);
@@ -47,9 +16,7 @@ export const getPendingVerifications = async (req: Request, res: Response) => {
 export const approveProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    if (!(id as string).startsWith('mock_')) {
-       await db.collection('products').doc(id as string).update({ status: 'approved' });
-    }
+    await db.collection('products').doc(id as string).update({ status: 'active' });
     return res.status(200).json({ success: true, message: 'Product approved' });
   } catch (error) {
     console.error('Error approving product:', error);
@@ -61,9 +28,7 @@ export const rejectProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { feedback } = req.body;
-    if (!(id as string).startsWith('mock_')) {
-       await db.collection('products').doc(id as string).update({ status: 'rejected', feedback });
-    }
+    await db.collection('products').doc(id as string).update({ status: 'rejected', feedback: feedback || '' });
     return res.status(200).json({ success: true, message: 'Product rejected' });
   } catch (error) {
     console.error('Error rejecting product:', error);
